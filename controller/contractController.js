@@ -50,7 +50,7 @@ exports.verifyContract = async (req, res) => {
                             sources: { file: { "content": sourcescode } },
                             settings: {
                                 optimizer: {
-                                    enabled: true,
+                                    enabled: optimizer == 1 ? true : false,
                                     runs: 200
                                 },
                                 outputSelection: {
@@ -62,18 +62,24 @@ exports.verifyContract = async (req, res) => {
                         }
                         // if solc successfully loaded, compile the contract and get the JSON output
                         var output = JSON.parse(solc_specific.compile(JSON.stringify(input_json)));
- 
 
-                        var compiled_bytecode = output['contracts']["file"][contract_name]['evm']['deployedBytecode']['object']
-                        // var api = output['contracts']["file"][contract_name].abi
-                       
-                        var blockchain_bytecode = await Web3.eth.getCode(txn_address);
-                        var processed_compiled_bytecode = await processBytecode(compiled_bytecode,blockchain_bytecode);
-
-
-                        if(processed_compiled_bytecode){
-                            return res.json({statusCode:200,statusMsg:processed_compiled_bytecode})
+                 
+                        if(output['contracts']["file"][contract_name] == undefined){
+                            return res.json({statusCode:400,statusMsg:"Enter valid contract name"})
+                        }else{
+                            var compiled_bytecode = output['contracts']["file"][contract_name]['evm']['deployedBytecode']['object']
+                            // // var api = output['contracts']["file"][contract_name].abi
+                            var blockchain_bytecode = await Web3.eth.getCode(txn_address);
+                            var processed_compiled_bytecode = await processBytecode(compiled_bytecode,blockchain_bytecode);
+                            if(processed_compiled_bytecode){
+                                return res.json({statusCode:200,statusMsg:processed_compiled_bytecode})
+                            }
                         }
+   
+                    }
+                    if(err){
+                        console.log("err",err)
+                        return res.json({statusCode:400,statusMsg:err})
                     }
                 })
             }
